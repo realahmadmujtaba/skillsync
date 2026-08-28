@@ -102,14 +102,16 @@ public REST API from touching this data).
 
 ## Part D — Deploy the frontend to Vercel
 
-1. Go to **vercel.com** → **Add New → Project** → import your GitHub repo.
-2. Vercel auto-detects **Vite** (config is in `vercel.json`). Leave build settings default:
-   - Build command: `pnpm build` · Output: `dist`
-3. **Environment Variables** — add:
+**Already done:** the Vercel project (`skillsync`, framework auto-detected as Vite from
+`vercel.json`) is linked to this GitHub repo and auto-deploys on every push to `main`.
+Live at **https://skillsync-smoky-nine.vercel.app**.
+
+Once the Railway API is up, add the one remaining env var so the frontend talks to it:
+1. **vercel.com** → project **skillsync** → **Settings → Environment Variables** → add:
    | Key | Value |
    |-----|-------|
    | `VITE_API_URL` | your Railway API URL, e.g. `https://skillsync-api.up.railway.app` |
-4. **Deploy.** Copy the resulting URL, e.g. `https://skillsync.vercel.app`.
+2. **Deployments** → redeploy (or just push a commit — env var changes need a rebuild).
 
 ---
 
@@ -117,7 +119,7 @@ public REST API from touching this data).
 
 1. Back in **Railway → API service → Variables**, set:
    ```
-   CORS_ORIGINS=https://skillsync.vercel.app
+   CORS_ORIGINS=https://skillsync-smoky-nine.vercel.app
    ```
    (comma-separate if you have multiple domains). Redeploy the API.
 2. Open your Vercel URL, sign up / log in — the badge shows **Live API**, and data now

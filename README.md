@@ -4,8 +4,8 @@
 learning roadmap, mock interviews with instant feedback, an application tracker, and
 role-based dashboards for students, mentors, and admins.
 
-**Live demo:** _deploying — link goes here once Vercel finishes_
-**API:** _deploying — link goes here once Railway finishes_
+**Live demo:** [skillsync-smoky-nine.vercel.app](https://skillsync-smoky-nine.vercel.app)
+**API:** _deploying — link goes here once Railway finishes (see [DEPLOYMENT.md](DEPLOYMENT.md))_
 
 ![Dashboard](docs/screenshots/dashboard.jpg)
 
