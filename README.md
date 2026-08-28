@@ -5,7 +5,7 @@ learning roadmap, mock interviews with instant feedback, an application tracker,
 role-based dashboards for students, mentors, and admins.
 
 **Live demo:** [skillsync-smoky-nine.vercel.app](https://skillsync-smoky-nine.vercel.app)
-**API:** _deploying — link goes here once Railway finishes (see [DEPLOYMENT.md](DEPLOYMENT.md))_
+**API:** _deploying — link goes here once Render finishes (see [DEPLOYMENT.md](DEPLOYMENT.md))_
 
 ![Dashboard](docs/screenshots/dashboard.jpg)
 
@@ -44,7 +44,7 @@ track outcomes.**
 
 ```
 ┌──────────────┐        HTTPS         ┌──────────────────┐        SQL         ┌──────────────────┐
-│   Vercel     │ ───────────────────> │     Railway       │ ─────────────────> │     Supabase      │
+│   Vercel     │ ───────────────────> │      Render        │ ─────────────────> │     Supabase      │
 │  React+Vite  │   VITE_API_URL       │  FastAPI (Docker)  │   psycopg 3 +      │    PostgreSQL     │
 │  (static)    │ <─────────────────── │  JWT auth + RBAC   │   Session pooler   │  (RLS: locked to  │
 └──────────────┘   JSON / REST        └──────────────────┘ <───────────────── │  the backend role)│
@@ -56,7 +56,8 @@ track outcomes.**
   (see the "Local"/"Live API" badge in the top bar).
 - **Backend** — FastAPI + SQLAlchemy 2.0, layered `routers → deps → models/schemas →
   database`, JWT auth (`python-jose`), passwords hashed with `bcrypt` via `passlib`.
-  Schema is owned by Alembic migrations, applied automatically on deploy.
+  Schema is owned by Alembic migrations, applied automatically on deploy. Deployed as a
+  Docker web service on Render's free tier (`render.yaml` Blueprint at the repo root).
 - **Database** — PostgreSQL on Supabase. The backend connects directly with the
   table-owning role (bypassing RLS); RLS is enabled with no policies so Supabase's public
   REST API can't touch the data — only the backend can.
@@ -64,7 +65,7 @@ track outcomes.**
 ## Tech stack
 
 React 19 · TypeScript · Vite · Tailwind CSS v4 · Recharts · FastAPI · SQLAlchemy 2.0 ·
-Alembic · PostgreSQL (Supabase) · JWT · Docker · GitHub Actions · Railway · Vercel
+Alembic · PostgreSQL (Supabase) · JWT · Docker · GitHub Actions · Render · Vercel
 
 ## Repository layout
 
@@ -73,6 +74,7 @@ src/            React frontend (components, auth, typed API client)
 backend/        FastAPI service (routers, models, Alembic migrations, tests)
 docs/           Screenshots and reference docs
 .github/        CI: frontend typecheck+build, backend lint+migrate+test
+render.yaml     Render Blueprint for the backend (Docker web service, free tier)
 DEPLOYMENT.md   Full run-locally and deploy-to-production walkthrough
 ```
 
@@ -85,7 +87,7 @@ pnpm install && pnpm dev       # frontend on :8443 (or the printed port)
 ```
 
 Full instructions, including running the backend without Docker and every production
-deploy step (Railway + Supabase + Vercel), are in [`DEPLOYMENT.md`](DEPLOYMENT.md).
+deploy step (Render + Supabase + Vercel), are in [`DEPLOYMENT.md`](DEPLOYMENT.md).
 
 ## Quality gates
 
