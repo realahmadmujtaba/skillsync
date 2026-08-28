@@ -1,0 +1,75 @@
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap');
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Archivo', 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --color-ink: #101014;
+  --color-ink-soft: #1b1b21;
+  --color-paper: #f8f7f3;
+  --color-card: #ffffff;
+  --color-line: #e7e5df;
+  --color-line-soft: #f0eee9;
+  --color-fg: #17171c;
+  --color-muted: #6c6a72;
+  --color-emerald: #0e7c66;
+  --color-emerald-soft: #e6f2ee;
+  --color-amber: #c98a1a;
+  --color-rose: #c0455b;
+  --color-sky: #2f6fb0;
+
+  --color-sidebar-fg: #b9b8c2;
+  --color-sidebar-muted: #6f6e7a;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    background-color: var(--color-paper);
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background-color: var(--color-emerald);
+    color: #ffffff;
+  }
+
+  /* Hide scrollbars until scrolling */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+  }
+  *:hover::-webkit-scrollbar-thumb {
+    background-color: #cfcdc6;
+  }
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: transparent;
+    border-radius: 999px;
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display);
+  }
+  .font-mono {
+    font-family: var(--font-mono);
+  }
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}

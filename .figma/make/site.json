@@ -1,0 +1,10 @@
+{
+  "description": "Generates tailored, detailed prompts for final-year IT projects with context-specific guidelines and a modern, user-friendly interface to streamline project planning.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
