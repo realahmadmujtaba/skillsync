@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { GripVertical } from "lucide-react";
 import { MatchPill, SectionLabel } from "./ui";
 import { applications as seed, stageMeta } from "../data";
@@ -20,6 +20,21 @@ export default function Applications() {
   const [items, setItems] = useState<Application[]>(seed);
   const [dragId, setDragId] = useState<string | null>(null);
   const [over, setOver] = useState<Application["stage"] | null>(null);
+
+  // Load the signed-in user's real applications when the backend is live.
+  useEffect(() => {
+    if (mode !== "online") return;
+    let cancelled = false;
+    api
+      .applications()
+      .then((rows) => {
+        if (!cancelled) setItems(rows);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [mode]);
 
   function drop(stage: Application["stage"]) {
     if (!dragId) return;

@@ -18,6 +18,26 @@ export type ApiUser = {
   readiness: number;
 };
 
+export type ApiOpportunity = {
+  id: string;
+  company: string;
+  role: string;
+  location: string;
+  tags: string[];
+  match: number;
+  posted: string;
+};
+
+export type ApplicationStage = "applied" | "screening" | "interview" | "offer";
+
+export type ApiApplication = {
+  id: string;
+  company: string;
+  role: string;
+  match: number;
+  stage: ApplicationStage;
+};
+
 export function getToken(): string | null {
   try {
     return localStorage.getItem(TOKEN_KEY);
@@ -97,8 +117,13 @@ export const api = {
     setToken(null);
   },
 
-  opportunities: () => request<unknown[]>("/api/opportunities"),
-  applications: () => request<unknown[]>("/api/applications"),
+  opportunities: () => request<ApiOpportunity[]>("/api/opportunities"),
+  applications: () => request<ApiApplication[]>("/api/applications"),
+  createApplication: (company: string, role: string, match: number) =>
+    request<ApiApplication>("/api/applications", {
+      method: "POST",
+      body: JSON.stringify({ company, role, match, stage: "applied" }),
+    }),
   moveApplication: (id: string, stage: string) =>
     request(`/api/applications/${id}`, {
       method: "PATCH",
