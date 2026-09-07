@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 
 from .config import settings
 from .routers import applications, auth, interviews, opportunities
@@ -25,3 +26,8 @@ app.include_router(interviews.router)
 @app.get("/api/health", tags=["meta"])
 def health() -> dict[str, str]:
     return {"status": "ok", "service": "skillsync"}
+
+
+@app.get("/", include_in_schema=False)
+def root() -> RedirectResponse:
+    return RedirectResponse(url="/docs")
