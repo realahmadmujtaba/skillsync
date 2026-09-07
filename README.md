@@ -78,16 +78,26 @@ render.yaml     Render Blueprint for the backend (Docker web service, free tier)
 DEPLOYMENT.md   Full run-locally and deploy-to-production walkthrough
 ```
 
-## Run it locally
+## Run it locally (fully Dockerized)
 
 ```bash
-docker compose up --build      # Postgres + FastAPI on :8000 (seeds demo data)
-cp .env.example .env           # sets VITE_API_URL=http://localhost:8000
-pnpm install && pnpm dev       # frontend on :8443 (or the printed port)
+docker compose up --build      # FastAPI on :8001, frontend (nginx) on :8443
 ```
 
-Full instructions, including running the backend without Docker and every production
-deploy step (Render + Supabase + Vercel), are in [`DEPLOYMENT.md`](DEPLOYMENT.md).
+By default `api` connects to the Supabase DB configured in `backend/.env` (same
+database production uses). If you'd rather run fully offline against a throwaway local
+database instead:
+
+```bash
+docker compose --profile local-db up --build   # adds a local Postgres, no Supabase needed
+```
+(then set `backend/.env`'s `DATABASE_URL` to `postgresql+psycopg://skillsync:skillsync@db:5432/skillsync`
+and add `python -m app.seed &&` to the `api` service's command in `docker-compose.yml`
+to seed demo data — see the comments in that file).
+
+Open **http://localhost:8443**. Full instructions, including running each service
+without Docker and every production deploy step (Render + Supabase + Vercel), are in
+[`DEPLOYMENT.md`](DEPLOYMENT.md).
 
 ## Quality gates
 

@@ -13,8 +13,10 @@ From the repo root:
 ```bash
 docker compose up --build
 ```
-This starts Postgres + the API on `http://localhost:8000`, seeds demo data, and
-exposes interactive docs at `http://localhost:8000/docs`.
+This starts the API on `http://localhost:8001`, connected to `DATABASE_URL` from
+`backend/.env` (Supabase by default), with interactive docs at
+`http://localhost:8001/docs`. For a throwaway local Postgres instead of Supabase, use
+`docker compose --profile local-db up --build` (see root `DEPLOYMENT.md`).
 
 ## Run locally without Docker
 ```bash

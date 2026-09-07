@@ -1,12 +1,20 @@
 services:
+  # Local Postgres — opt-in only. Not used by default since `api` is
+  # configured to talk to Supabase (see backend/.env). Start it with
+  # `docker compose --profile local-db up` if you'd rather run fully offline
+  # against a throwaway local database. Note: port 5432 may already be taken
+  # by another local project's Postgres container — change the host port
+  # below if so.
   db:
     image: postgres:16-alpine
+    profiles:
+      - local-db
     environment:
       POSTGRES_USER: skillsync
       POSTGRES_PASSWORD: skillsync
       POSTGRES_DB: skillsync
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -17,17 +25,22 @@ services:
 
   api:
     build: ./backend
-    environment:
-      DATABASE_URL: postgresql+psycopg://skillsync:skillsync@db:5432/skillsync
-      JWT_SECRET: dev-secret-change-me
-      CORS_ORIGINS: http://localhost:5173,http://localhost:8443
+    env_file:
+      - ./backend/.env
     ports:
-      - "8000:8000"
-    depends_on:
-      db:
-        condition: service_healthy
+      - "8001:8000"
     command: >
-      sh -c "alembic upgrade head && python -m app.seed && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+      sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+
+  web:
+    build:
+      context: .
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8001}
+    ports:
+      - "8443:80"
+    depends_on:
+      - api
 
 volumes:
   pgdata:

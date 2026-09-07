@@ -8,43 +8,64 @@ Backend: **FastAPI** → **Render** · Database: **PostgreSQL** → **Supabase**
 ## Part A — Run locally first (verify everything works)
 
 ### A1. Prerequisites
-- Node 18+ and pnpm (`npm i -g pnpm`)
-- Python 3.12+
-- Docker Desktop (easiest path for Postgres)
+- Docker Desktop — this is the only prerequisite for the Dockerized path below.
+- Node 18+ / pnpm and Python 3.12+ are only needed if you run a service *without*
+  Docker (see the alternatives below).
 
-### A2. Start the backend + database with Docker (recommended)
+### A2. Full stack with Docker (recommended)
 From the repo root:
 ```bash
 docker compose up --build
 ```
-This starts:
-- Postgres on `localhost:5432`
-- FastAPI on `http://localhost:8000` (auto-creates tables + seeds demo data)
-- Swagger docs at `http://localhost:8000/docs`
+This builds and starts two containers:
+- **`api`** — FastAPI on `http://localhost:8001`, connected to whatever `DATABASE_URL`
+  is set in `backend/.env` (by default, the Supabase DB production also uses — see
+  `backend/.env.example` for the connection-string format). Runs `alembic upgrade head`
+  on start; swagger docs at `http://localhost:8001/docs`.
+- **`web`** — the production Vite build served by nginx on `http://localhost:8443`,
+  baked with `VITE_API_URL` from the root `.env` (defaults to `http://localhost:8001`).
 
 Verify:
 ```bash
-curl http://localhost:8000/api/health      # -> {"status":"ok",...}
+curl http://localhost:8001/api/health      # -> {"status":"ok",...}
 ```
+Then open **http://localhost:8443** — the top-bar badge should read **Live API**.
 
-#### Alternative: run backend without Docker
+> **Ports 8001/5433 already taken?** Another project on the machine may be using
+> 8000/5432 — edit the host-side port numbers in `docker-compose.yml` and the
+> `VITE_API_URL` in `.env` to match.
+
+> **Connection error mentioning "tenant" or "project not found"?** Supabase's free
+> tier auto-pauses a project after a period of inactivity. Log into
+> [supabase.com](https://supabase.com), open the `skillsync` project, and resume it
+> (one click), then re-run `docker compose up`.
+
+#### No Supabase access, or want a fully offline/local database instead
 ```bash
+docker compose --profile local-db up --build
+```
+This additionally starts a throwaway local Postgres container (`db`, on host port
+`5433`). Point `backend/.env`'s `DATABASE_URL` at it —
+`postgresql+psycopg://skillsync:skillsync@db:5432/skillsync` — and add
+`python -m app.seed &&` before `uvicorn` in the `api` service's `command` in
+`docker-compose.yml` to load demo data (three demo accounts, password `password123`).
+This path needs no external services and no card/subscription anywhere.
+
+#### Alternative: run a service without Docker
+```bash
+# backend
 cd backend
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env          # edit DATABASE_URL to your Postgres
 python -m app.seed            # create tables + demo data
 uvicorn app.main:app --reload --port 8000
-```
 
-### A3. Start the frontend
-In a second terminal, from the repo root:
-```bash
-cp .env.example .env          # sets VITE_API_URL=http://localhost:8000
+# frontend (separate terminal, repo root)
+cp .env.example .env          # sets VITE_API_URL to match the backend port above
 pnpm install
 pnpm dev
 ```
-Open the printed URL. The top-bar badge should read **Live API**.
 Log in with a demo account (password `password123`):
 `student@skillsync.io` · `mentor@skillsync.io` · `admin@skillsync.io`
 
