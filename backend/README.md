@@ -14,8 +14,8 @@ From the repo root:
 docker compose up --build
 ```
 This starts the API on `http://localhost:8001`, connected to `DATABASE_URL` from
-`backend/.env` (Supabase by default), with interactive docs at
-`http://localhost:8001/docs`. For a throwaway local Postgres instead of Supabase, use
+`backend/.env` (Azure Postgres by default), with interactive docs at
+`http://localhost:8001/docs`. For a throwaway local Postgres instead, use
 `docker compose --profile local-db up --build` (see root `DEPLOYMENT.md`).
 
 ## Run locally without Docker
@@ -65,5 +65,6 @@ backend (ruff, `alembic upgrade head` against a real Postgres service, then `pyt
 | GET | `/api/health` | Health check |
 
 ## Connect the frontend
-Set `VITE_API_URL=http://localhost:8000` in a root `.env`. The frontend auto-detects
-the API and falls back to local mode when it's unreachable.
+Set `VITE_API_URL` in a root `.env` to match wherever this API is running (e.g.
+`http://localhost:8001` for the Docker Compose setup, or the deployed Azure URL). The
+frontend auto-detects the API and falls back to local mode when it's unreachable.

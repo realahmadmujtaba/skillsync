@@ -5,7 +5,7 @@ learning roadmap, mock interviews with instant feedback, an application tracker,
 role-based dashboards for students, mentors, and admins.
 
 **Live demo:** [skillsync-smoky-nine.vercel.app](https://skillsync-smoky-nine.vercel.app)
-**API:** _deploying — link goes here once Render finishes (see [DEPLOYMENT.md](DEPLOYMENT.md))_
+**API:** [skillsync-api-ahmad.azurewebsites.net](https://skillsync-api-ahmad.azurewebsites.net/docs) (see [DEPLOYMENT.md](DEPLOYMENT.md))
 
 ![Dashboard](docs/screenshots/dashboard.jpg)
 
@@ -43,12 +43,12 @@ track outcomes.**
 ## Architecture
 
 ```
-┌──────────────┐        HTTPS         ┌──────────────────┐        SQL         ┌──────────────────┐
-│   Vercel     │ ───────────────────> │      Render        │ ─────────────────> │     Supabase      │
-│  React+Vite  │   VITE_API_URL       │  FastAPI (Docker)  │   psycopg 3 +      │    PostgreSQL     │
-│  (static)    │ <─────────────────── │  JWT auth + RBAC   │   Session pooler   │  (RLS: locked to  │
-└──────────────┘   JSON / REST        └──────────────────┘ <───────────────── │  the backend role)│
-                                                                                └──────────────────┘
+┌──────────────┐        HTTPS         ┌──────────────────┐        SQL          ┌──────────────────┐
+│   Vercel     │ ───────────────────> │  Azure App Service │ ──────────────────> │  Azure Database   │
+│  React+Vite  │   VITE_API_URL       │  FastAPI (Docker,  │   psycopg 3, TLS,   │  for PostgreSQL   │
+│  (static)    │ <─────────────────── │  Linux F1 free)    │   IP-scoped         │  Flexible Server  │
+└──────────────┘   JSON / REST        └──────────────────┘ <────────────────── │  (Burstable, free) │
+                                                                                 └──────────────────┘
 ```
 
 - **Frontend** — React 19 + Vite + Tailwind CSS v4. Talks to the API over a typed REST
@@ -57,15 +57,15 @@ track outcomes.**
 - **Backend** — FastAPI + SQLAlchemy 2.0, layered `routers → deps → models/schemas →
   database`, JWT auth (`python-jose`), passwords hashed with `bcrypt` via `passlib`.
   Schema is owned by Alembic migrations, applied automatically on deploy. Deployed as a
-  Docker web service on Render's free tier (`render.yaml` Blueprint at the repo root).
-- **Database** — PostgreSQL on Supabase. The backend connects directly with the
-  table-owning role (bypassing RLS); RLS is enabled with no policies so Supabase's public
-  REST API can't touch the data — only the backend can.
+  Docker container (image published to GitHub Container Registry) on Azure App Service's
+  free Linux (F1) tier.
+- **Database** — Azure Database for PostgreSQL Flexible Server, free-tier Burstable
+  (B1ms, 32GB), firewall-restricted to Azure services plus one developer IP.
 
 ## Tech stack
 
 React 19 · TypeScript · Vite · Tailwind CSS v4 · Recharts · FastAPI · SQLAlchemy 2.0 ·
-Alembic · PostgreSQL (Supabase) · JWT · Docker · GitHub Actions · Render · Vercel
+Alembic · PostgreSQL (Azure) · JWT · Docker · GitHub Actions · Azure App Service · Vercel
 
 ## Repository layout
 
@@ -74,7 +74,7 @@ src/            React frontend (components, auth, typed API client)
 backend/        FastAPI service (routers, models, Alembic migrations, tests)
 docs/           Screenshots and reference docs
 .github/        CI: frontend typecheck+build, backend lint+migrate+test
-render.yaml     Render Blueprint for the backend (Docker web service, free tier)
+render.yaml     Legacy Render Blueprint (kept as a fallback deploy path; not the active one)
 DEPLOYMENT.md   Full run-locally and deploy-to-production walkthrough
 ```
 
@@ -84,19 +84,19 @@ DEPLOYMENT.md   Full run-locally and deploy-to-production walkthrough
 docker compose up --build      # FastAPI on :8001, frontend (nginx) on :8443
 ```
 
-By default `api` connects to the Supabase DB configured in `backend/.env` (same
+By default `api` connects to the Azure Postgres DB configured in `backend/.env` (same
 database production uses). If you'd rather run fully offline against a throwaway local
 database instead:
 
 ```bash
-docker compose --profile local-db up --build   # adds a local Postgres, no Supabase needed
+docker compose --profile local-db up --build   # adds a local Postgres, no cloud DB needed
 ```
 (then set `backend/.env`'s `DATABASE_URL` to `postgresql+psycopg://skillsync:skillsync@db:5432/skillsync`
 and add `python -m app.seed &&` to the `api` service's command in `docker-compose.yml`
 to seed demo data — see the comments in that file).
 
 Open **http://localhost:8443**. Full instructions, including running each service
-without Docker and every production deploy step (Render + Supabase + Vercel), are in
+without Docker and every production deploy step (Azure + Vercel), are in
 [`DEPLOYMENT.md`](DEPLOYMENT.md).
 
 ## Quality gates
