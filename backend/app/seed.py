@@ -1,10 +1,32 @@
 """Seed the database with demo data. Idempotent — safe to run repeatedly."""
 
+from datetime import datetime, timedelta, timezone
+
 from sqlalchemy import select
 
 from .database import Base, SessionLocal, engine
-from .models import Application, Opportunity, Role, Stage, User
+from .models import (
+    Application,
+    Opportunity,
+    ReadinessSnapshot,
+    Role,
+    SkillAssessment,
+    SkillStatus,
+    Stage,
+    User,
+)
 from .security import hash_password
+
+DEMO_SKILLS = [
+    ("Data Structures & Algorithms", 88, SkillStatus.strong, "Consistent problem-solving; 320+ solved."),
+    ("React + TypeScript", 82, SkillStatus.strong, "Two shipped projects with typed contracts."),
+    ("Databases", 70, SkillStatus.growing, "Solid schema design; add query optimization depth."),
+    ("REST & API design", 66, SkillStatus.growing, "Solid basics; add auth + rate limiting depth."),
+    ("System Design", 54, SkillStatus.gap, "No evidence of scalability/architecture work."),
+    ("Automated Testing", 45, SkillStatus.gap, "Add unit + one E2E flow to a project."),
+]
+
+DEMO_READINESS_TREND = [41, 48, 55, 62, 71, 78]
 
 OPPORTUNITIES = [
     ("Northwind Labs", "Software Engineer Intern", "Bengaluru · Hybrid", "React,TypeScript,Node", 92, "2d ago"),
@@ -41,6 +63,11 @@ def run() -> None:
                 ("Lumen Data", "SWE Intern", 79, Stage.offer),
             ]:
                 db.add(Application(user_id=demo.id, company=c, role=r, match=m, stage=s))
+            for skill, coverage, status, note in DEMO_SKILLS:
+                db.add(SkillAssessment(user_id=demo.id, skill=skill, coverage=coverage, status=status, note=note))
+            base = datetime.now(timezone.utc) - timedelta(days=30 * (len(DEMO_READINESS_TREND) - 1))
+            for i, score in enumerate(DEMO_READINESS_TREND):
+                db.add(ReadinessSnapshot(user_id=demo.id, score=score, recorded_at=base + timedelta(days=30 * i)))
 
         for email, role in [("mentor@skillsync.io", Role.mentor), ("admin@skillsync.io", Role.admin)]:
             if not db.scalar(select(User).where(User.email == email)):

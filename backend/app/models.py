@@ -27,21 +27,35 @@ class Stage(str, enum.Enum):
     offer = "offer"
 
 
+class SkillStatus(str, enum.Enum):
+    strong = "strong"
+    growing = "growing"
+    gap = "gap"
+
+
 class User(Base):
     __tablename__ = "users"
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
     name: Mapped[str] = mapped_column(String(120), nullable=False)
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
-    hashed_password: Mapped[str] = mapped_column(String, nullable=False)
+    hashed_password: Mapped[str | None] = mapped_column(String, nullable=True)
+    google_sub: Mapped[str | None] = mapped_column(String(255), unique=True, nullable=True)
     role: Mapped[Role] = mapped_column(Enum(Role), default=Role.student, nullable=False)
     readiness: Mapped[int] = mapped_column(Integer, default=0)
+    target_role: Mapped[str] = mapped_column(String(160), default="Software Engineer Intern")
     created_at: Mapped[datetime] = mapped_column(default=func.now())
 
     applications: Mapped[list[Application]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
     interviews: Mapped[list[InterviewResult]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    skills: Mapped[list[SkillAssessment]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    readiness_history: Mapped[list[ReadinessSnapshot]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
 
@@ -82,3 +96,32 @@ class InterviewResult(Base):
     created_at: Mapped[datetime] = mapped_column(default=func.now())
 
     user: Mapped[User] = relationship(back_populates="interviews")
+
+
+class SkillAssessment(Base):
+    """One skill's coverage for a user, from their latest resume analysis."""
+
+    __tablename__ = "skill_assessments"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    skill: Mapped[str] = mapped_column(String(120), nullable=False)
+    coverage: Mapped[int] = mapped_column(Integer, default=0)
+    status: Mapped[SkillStatus] = mapped_column(Enum(SkillStatus), default=SkillStatus.gap)
+    note: Mapped[str] = mapped_column(Text, default="")
+    updated_at: Mapped[datetime] = mapped_column(default=func.now(), onupdate=func.now())
+
+    user: Mapped[User] = relationship(back_populates="skills")
+
+
+class ReadinessSnapshot(Base):
+    """A point-in-time readiness score, recorded on each resume analysis."""
+
+    __tablename__ = "readiness_snapshots"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    score: Mapped[int] = mapped_column(Integer, default=0)
+    recorded_at: Mapped[datetime] = mapped_column(default=func.now())
+
+    user: Mapped[User] = relationship(back_populates="readiness_history")

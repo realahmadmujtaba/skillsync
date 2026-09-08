@@ -37,6 +37,7 @@ services:
       context: .
       args:
         VITE_API_URL: ${VITE_API_URL:-http://localhost:8001}
+        VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:-}
     ports:
       - "8443:80"
     depends_on:

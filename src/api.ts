@@ -38,6 +38,41 @@ export type ApiApplication = {
   stage: ApplicationStage;
 };
 
+export type SkillStatus = "strong" | "growing" | "gap";
+
+export type ApiSkill = {
+  skill: string;
+  coverage: number;
+  status: SkillStatus;
+  note: string;
+};
+
+export type ApiResumeAnalysis = {
+  target_role: string;
+  readiness: number;
+  recommendation: string;
+  skills: ApiSkill[];
+};
+
+export type ApiDashboard = {
+  name: string;
+  target_role: string;
+  readiness: number;
+  readiness_delta: number;
+  readiness_trend: { date: string; score: number }[];
+  skill_coverage: ApiSkill[];
+  funnel: { stage: string; value: number }[];
+  top_gaps: ApiSkill[];
+};
+
+export type ApiRoadmapMilestone = {
+  skill: string;
+  title: string;
+  focus: string;
+  status: "done" | "active" | "upcoming";
+  progress: number;
+};
+
 export function getToken(): string | null {
   try {
     return localStorage.getItem(TOKEN_KEY);
@@ -134,4 +169,32 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ track, score, feedback }),
     }),
+
+  dashboard: () => request<ApiDashboard>("/api/dashboard"),
+  roadmap: () =>
+    request<{ milestones: ApiRoadmapMilestone[] }>("/api/roadmap"),
+
+  async analyzeResume(file: File, targetRole: string): Promise<ApiResumeAnalysis> {
+    const form = new FormData();
+    form.append("file", file);
+    form.append("target_role", targetRole);
+    const headers = new Headers();
+    const token = getToken();
+    if (token) headers.set("Authorization", `Bearer ${token}`);
+    const res = await fetch(`${BASE}/api/resume/analyze`, { method: "POST", body: form, headers });
+    if (!res.ok) {
+      const detail = await res.json().catch(() => ({}));
+      throw new Error(detail.detail ?? "Resume analysis failed");
+    }
+    return res.json() as Promise<ApiResumeAnalysis>;
+  },
+
+  async loginWithGoogle(idToken: string, role: Role): Promise<ApiUser> {
+    const data = await request<{ access_token: string; user: ApiUser }>(
+      "/api/auth/google",
+      { method: "POST", body: JSON.stringify({ id_token: idToken, role }) },
+    );
+    setToken(data.access_token);
+    return data.user;
+  },
 };

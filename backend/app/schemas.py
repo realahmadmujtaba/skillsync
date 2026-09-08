@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr
 
-from .models import Role, Stage
+from .models import Role, SkillStatus, Stage
 
 
 class Token(BaseModel):
@@ -32,6 +33,12 @@ class UserOut(UserBase):
     model_config = ConfigDict(from_attributes=True)
     id: str
     readiness: int
+    target_role: str
+
+
+class GoogleAuthIn(BaseModel):
+    id_token: str
+    role: Role = Role.student
 
 
 class OpportunityOut(BaseModel):
@@ -90,3 +97,70 @@ class InterviewOut(BaseModel):
     score: int
     feedback: str
     created_at: datetime
+
+
+# --- Resume analysis / dashboard / roadmap -------------------------------
+
+
+class ExtractedSkill(BaseModel):
+    """One skill as extracted by Claude from a resume, relative to the target role."""
+
+    skill: str
+    coverage: int
+    status: Literal["strong", "growing", "gap"]
+    note: str
+
+
+class ResumeExtraction(BaseModel):
+    """Structured output schema Claude fills in from the resume PDF."""
+
+    skills: list[ExtractedSkill]
+    recommendation: str
+
+
+class SkillOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    skill: str
+    coverage: int
+    status: SkillStatus
+    note: str
+
+
+class ResumeAnalysisOut(BaseModel):
+    target_role: str
+    readiness: int
+    recommendation: str
+    skills: list[SkillOut]
+
+
+class ReadinessPoint(BaseModel):
+    date: str
+    score: int
+
+
+class FunnelStage(BaseModel):
+    stage: str
+    value: int
+
+
+class DashboardOut(BaseModel):
+    name: str
+    target_role: str
+    readiness: int
+    readiness_delta: int
+    readiness_trend: list[ReadinessPoint]
+    skill_coverage: list[SkillOut]
+    funnel: list[FunnelStage]
+    top_gaps: list[SkillOut]
+
+
+class RoadmapMilestone(BaseModel):
+    skill: str
+    title: str
+    focus: str
+    status: Literal["done", "active", "upcoming"]
+    progress: int
+
+
+class RoadmapOut(BaseModel):
+    milestones: list[RoadmapMilestone]

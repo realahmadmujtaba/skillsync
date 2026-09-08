@@ -23,6 +23,7 @@ type AuthState = {
   mode: "online" | "offline";
   login: (email: string, password: string, role: Role) => Promise<void>;
   signup: (name: string, email: string, password: string, role: Role) => Promise<void>;
+  loginWithGoogle: (idToken: string, role: Role) => Promise<void>;
   logout: () => void;
 };
 
@@ -119,6 +120,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
       persist({ name: name || nameFromEmail(email), email, role, initials: initials(name || email) });
+    },
+    loginWithGoogle: async (idToken, role) => {
+      if (mode !== "online") {
+        throw new Error("Google sign-in needs a live backend connection.");
+      }
+      persist(toAuthUser(await api.loginWithGoogle(idToken, role)));
     },
     logout: () => {
       api.logout();

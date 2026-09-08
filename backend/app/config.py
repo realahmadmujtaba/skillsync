@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 60 * 24
     cors_origins: str = "http://localhost:5173,http://localhost:8443"
+    groq_api_key: str = ""
+    google_client_id: str = ""
 
     @property
     def cors_list(self) -> list[str]:

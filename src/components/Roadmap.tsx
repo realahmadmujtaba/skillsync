@@ -1,12 +1,39 @@
+import { useEffect, useState } from "react";
 import { Check, Circle, PlayCircle } from "lucide-react";
 import { Card, SectionLabel, ProgressBar } from "./ui";
-import { roadmap } from "../data";
+import { api, type ApiRoadmapMilestone } from "../api";
 
 export default function Roadmap() {
-  const done = roadmap.filter((r) => r.done).length;
-  const overall = Math.round(
-    roadmap.reduce((a, r) => a + r.progress, 0) / roadmap.length,
-  );
+  const [milestones, setMilestones] = useState<ApiRoadmapMilestone[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .roadmap()
+      .then((r) => !cancelled && setMilestones(r.milestones))
+      .catch((err) => !cancelled && setError(err instanceof Error ? err.message : "Failed to load"));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (error) {
+    return <Card className="p-8 text-center text-sm text-muted">Couldn&rsquo;t load your roadmap: {error}</Card>;
+  }
+  if (!milestones) {
+    return <Card className="p-8 text-center text-sm text-muted">Loading roadmap…</Card>;
+  }
+  if (milestones.length === 0) {
+    return (
+      <Card className="p-8 text-center text-sm text-muted">
+        Analyze a resume first — your roadmap is generated from your gap analysis.
+      </Card>
+    );
+  }
+
+  const done = milestones.filter((m) => m.status === "done").length;
+  const overall = Math.round(milestones.reduce((a, m) => a + m.progress, 0) / milestones.length);
 
   return (
     <div className="flex flex-col gap-6">
@@ -14,11 +41,10 @@ export default function Roadmap() {
         <div>
           <SectionLabel>Roadmap progress</SectionLabel>
           <h2 className="mt-1 font-display text-lg font-bold text-ink">
-            {done} of {roadmap.length} milestones complete
+            {done} of {milestones.length} milestones complete
           </h2>
           <p className="mt-1 text-sm text-muted">
-            Personalized from your gap analysis. Finish by end of the month to peak
-            before interview season.
+            Personalized from your latest resume gap analysis.
           </p>
         </div>
         <div className="w-full sm:w-56">
@@ -33,16 +59,16 @@ export default function Roadmap() {
       <div className="relative pl-6">
         <div className="absolute bottom-2 left-[9px] top-2 w-px bg-line" />
         <div className="flex flex-col gap-4">
-          {roadmap.map((step) => (
-            <div key={step.title} className="relative">
+          {milestones.map((m) => (
+            <div key={m.skill} className="relative">
               <span
                 className={`absolute -left-6 top-6 flex h-[18px] w-[18px] items-center justify-center rounded-full ring-4 ring-paper ${
-                  step.done ? "bg-emerald" : step.progress > 0 ? "bg-amber" : "bg-line"
+                  m.status === "done" ? "bg-emerald" : m.status === "active" ? "bg-amber" : "bg-line"
                 }`}
               >
-                {step.done ? (
+                {m.status === "done" ? (
                   <Check className="h-3 w-3 text-white" strokeWidth={3} />
-                ) : step.progress > 0 ? (
+                ) : m.status === "active" ? (
                   <PlayCircle className="h-3 w-3 text-white" />
                 ) : (
                   <Circle className="h-2.5 w-2.5 text-muted" />
@@ -51,24 +77,24 @@ export default function Roadmap() {
 
               <Card className="p-5 transition-shadow hover:shadow-[0_1px_0_#e7e5df,0_8px_24px_-16px_rgba(16,16,20,0.25)]">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-emerald">
-                    {step.weeks}
-                  </span>
-                  {step.done && (
+                  {m.status === "done" && (
                     <span className="rounded-full bg-emerald-soft px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-emerald">
                       Done
                     </span>
                   )}
+                  {m.status === "active" && (
+                    <span className="rounded-full bg-amber/20 px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-amber">
+                      In progress
+                    </span>
+                  )}
                 </div>
-                <h3 className="mt-2 font-display text-base font-bold text-ink">
-                  {step.title}
-                </h3>
-                <p className="mt-1 text-sm text-muted">{step.focus}</p>
-                {!step.done && (
+                <h3 className="mt-2 font-display text-base font-bold text-ink">{m.title}</h3>
+                <p className="mt-1 text-sm text-muted">{m.focus}</p>
+                {m.status !== "done" && (
                   <div className="mt-4 flex items-center gap-3">
-                    <ProgressBar value={step.progress} />
+                    <ProgressBar value={m.progress} />
                     <span className="shrink-0 font-mono text-xs font-semibold tabular text-muted">
-                      {step.progress}%
+                      {m.progress}%
                     </span>
                   </div>
                 )}

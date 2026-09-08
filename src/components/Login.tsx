@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Sparkles,
   GraduationCap,
@@ -17,8 +17,10 @@ const roles: { key: Role; icon: typeof Users; blurb: string }[] = [
   { key: "admin", icon: Shield, blurb: "Manage the platform" },
 ];
 
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
+
 export default function Login() {
-  const { login, signup } = useAuth();
+  const { login, signup, loginWithGoogle } = useAuth();
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [role, setRole] = useState<Role>("student");
   const [name, setName] = useState("");
@@ -26,6 +28,47 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const googleButtonRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!GOOGLE_CLIENT_ID || !googleButtonRef.current) return;
+    let cancelled = false;
+
+    function render(attempt = 0) {
+      const g = (window as unknown as { google?: any }).google;
+      if (!g?.accounts?.id) {
+        if (attempt < 20 && !cancelled) setTimeout(() => render(attempt + 1), 150);
+        return;
+      }
+      g.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: async (resp: { credential: string }) => {
+          setError(null);
+          setBusy(true);
+          try {
+            await loginWithGoogle(resp.credential, role);
+          } catch (err) {
+            setError(err instanceof Error ? err.message : "Google sign-in failed");
+          } finally {
+            setBusy(false);
+          }
+        },
+      });
+      if (googleButtonRef.current) {
+        g.accounts.id.renderButton(googleButtonRef.current, {
+          theme: "outline",
+          size: "large",
+          shape: "rectangular",
+          text: "continue_with",
+          width: 320,
+        });
+      }
+    }
+    render();
+    return () => {
+      cancelled = true;
+    };
+  }, [role, loginWithGoogle]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -175,16 +218,16 @@ export default function Login() {
             </button>
           </form>
 
-          <div className="mt-4 flex items-center gap-3 text-xs text-muted">
-            <div className="h-px flex-1 bg-line" />
-            or
-            <div className="h-px flex-1 bg-line" />
-          </div>
-
-          <button className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-line bg-card px-4 py-3 text-sm font-semibold text-ink transition-colors hover:bg-line-soft">
-            <span className="font-display font-bold text-emerald">G</span>
-            Continue with Google
-          </button>
+          {GOOGLE_CLIENT_ID && (
+            <>
+              <div className="mt-4 flex items-center gap-3 text-xs text-muted">
+                <div className="h-px flex-1 bg-line" />
+                or
+                <div className="h-px flex-1 bg-line" />
+              </div>
+              <div ref={googleButtonRef} className="mt-4 flex w-full justify-center" />
+            </>
+          )}
 
           <p className="mt-6 text-center text-sm text-muted">
             {mode === "login" ? "New to SkillSync?" : "Already have an account?"}{" "}

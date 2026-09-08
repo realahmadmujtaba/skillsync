@@ -9,10 +9,12 @@ RUN pnpm install --frozen-lockfile
 
 COPY . .
 
-# Vite inlines env vars at build time, so this must be a build ARG, not a
-# runtime one. Defaults to the api service's published port.
+# Vite inlines env vars at build time, so these must be build ARGs, not
+# runtime ones. VITE_API_URL defaults to the api service's published port.
 ARG VITE_API_URL=http://localhost:8000
+ARG VITE_GOOGLE_CLIENT_ID=""
 ENV VITE_API_URL=${VITE_API_URL}
+ENV VITE_GOOGLE_CLIENT_ID=${VITE_GOOGLE_CLIENT_ID}
 RUN pnpm build
 
 FROM nginx:1.27-alpine
