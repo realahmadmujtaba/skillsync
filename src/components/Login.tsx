@@ -120,15 +120,15 @@ export default function Login() {
           </p>
         </div>
 
-        <div className="flex gap-8">
+        <div className="flex flex-col gap-3">
           {[
-            ["12k+", "students matched"],
-            ["840", "hiring partners"],
-            ["8.3%", "offer rate"],
-          ].map(([n, l]) => (
-            <div key={l}>
-              <div className="font-display text-2xl font-extrabold text-white">{n}</div>
-              <div className="text-xs text-sidebar-muted">{l}</div>
+            "AI-powered resume analysis, not keyword matching",
+            "Real job listings, scored against your actual skills",
+            "A learning path with real resources for every gap",
+          ].map((line) => (
+            <div key={line} className="flex items-center gap-2.5 text-sm text-sidebar-fg">
+              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald" />
+              {line}
             </div>
           ))}
         </div>
