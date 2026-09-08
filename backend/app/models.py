@@ -114,6 +114,19 @@ class SkillAssessment(Base):
     user: Mapped[User] = relationship(back_populates="skills")
 
 
+class PasswordResetToken(Base):
+    """A one-time password-reset token. Only the SHA-256 hash is stored."""
+
+    __tablename__ = "password_reset_tokens"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    token_hash: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    expires_at: Mapped[datetime] = mapped_column(nullable=False)
+    used: Mapped[bool] = mapped_column(default=False)
+    created_at: Mapped[datetime] = mapped_column(default=func.now())
+
+
 class ReadinessSnapshot(Base):
     """A point-in-time readiness score, recorded on each resume analysis."""
 

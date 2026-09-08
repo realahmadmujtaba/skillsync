@@ -228,6 +228,20 @@ export const api = {
     return res.json() as Promise<ApiResumeAnalysis>;
   },
 
+  async forgotPassword(email: string): Promise<void> {
+    await request("/api/auth/forgot-password", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    });
+  },
+
+  async resetPassword(token: string, newPassword: string): Promise<void> {
+    await request("/api/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify({ token, new_password: newPassword }),
+    });
+  },
+
   async loginWithGoogle(idToken: string, role: Role): Promise<ApiUser> {
     const data = await request<{ access_token: string; user: ApiUser }>(
       "/api/auth/google",

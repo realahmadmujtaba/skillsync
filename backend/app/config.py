@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     adzuna_app_id: str = ""
     adzuna_app_key: str = ""
     adzuna_country: str = "in"
+    resend_api_key: str = ""
+    email_from: str = ""
+    frontend_url: str = "http://localhost:8443"
 
     @property
     def cors_list(self) -> list[str]:

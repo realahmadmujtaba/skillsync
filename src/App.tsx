@@ -4,6 +4,7 @@ import Sidebar from "./components/Sidebar";
 import type { ViewKey } from "./components/Sidebar";
 import Topbar from "./components/Topbar";
 import Login from "./components/Login";
+import ResetPassword from "./components/ResetPassword";
 import Dashboard from "./components/Dashboard";
 import ResumeAnalysis from "./components/ResumeAnalysis";
 import Roadmap from "./components/Roadmap";
@@ -14,6 +15,9 @@ import AdminView from "./components/AdminView";
 import MockInterview from "./components/MockInterview";
 
 export default function App() {
+  const resetToken = new URLSearchParams(window.location.search).get("reset_token");
+  if (resetToken) return <ResetPassword token={resetToken} />;
+
   return (
     <AuthProvider>
       <AppShell />

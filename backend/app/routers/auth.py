@@ -1,3 +1,7 @@
+import hashlib
+import secrets
+from datetime import datetime, timedelta, timezone
+
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from google.auth.transport import requests as google_requests
@@ -8,11 +12,29 @@ from sqlalchemy.orm import Session
 from ..config import settings
 from ..database import get_db
 from ..deps import get_current_user
-from ..models import User
-from ..schemas import GoogleAuthIn, Token, UserCreate, UserOut
+from ..email import send_email
+from ..models import PasswordResetToken, User
+from ..schemas import (
+    ForgotPasswordIn,
+    GoogleAuthIn,
+    ResetPasswordIn,
+    Token,
+    UserCreate,
+    UserOut,
+)
 from ..security import create_access_token, hash_password, verify_password
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
+
+RESET_TOKEN_TTL_MINUTES = 30
+
+
+def _hash_token(token: str) -> str:
+    return hashlib.sha256(token.encode()).hexdigest()
+
+
+def _utcnow_naive() -> datetime:
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 @router.post("/signup", response_model=Token, status_code=201)
@@ -41,6 +63,55 @@ def login(
     if not user or not verify_password(form.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Incorrect email or password")
     return Token(access_token=create_access_token(user.id), user=UserOut.model_validate(user))
+
+
+@router.post("/forgot-password", status_code=202)
+def forgot_password(payload: ForgotPasswordIn, db: Session = Depends(get_db)) -> dict:
+    user = db.scalar(select(User).where(User.email == payload.email))
+    if user:
+        raw_token = secrets.token_urlsafe(32)
+        db.add(
+            PasswordResetToken(
+                user_id=user.id,
+                token_hash=_hash_token(raw_token),
+                expires_at=_utcnow_naive() + timedelta(minutes=RESET_TOKEN_TTL_MINUTES),
+            )
+        )
+        db.commit()
+        reset_link = f"{settings.frontend_url.rstrip('/')}/?reset_token={raw_token}"
+        try:
+            send_email(
+                to=user.email,
+                subject="Reset your SkillSync password",
+                html=(
+                    f"<p>Hi {user.name},</p>"
+                    f"<p>Click the link below to reset your SkillSync password. "
+                    f"This link expires in {RESET_TOKEN_TTL_MINUTES} minutes.</p>"
+                    f'<p><a href="{reset_link}">{reset_link}</a></p>'
+                    "<p>If you didn't request this, you can safely ignore this email.</p>"
+                ),
+            )
+        except Exception:
+            pass  # never leak email-delivery failures through this endpoint
+    # Always the same response, regardless of whether the email is registered.
+    return {"detail": "If that email is registered, a reset link has been sent."}
+
+
+@router.post("/reset-password")
+def reset_password(payload: ResetPasswordIn, db: Session = Depends(get_db)) -> dict:
+    token_hash = _hash_token(payload.token)
+    record = db.scalar(
+        select(PasswordResetToken).where(PasswordResetToken.token_hash == token_hash)
+    )
+    if not record or record.used or record.expires_at < _utcnow_naive():
+        raise HTTPException(status_code=400, detail="Invalid or expired reset link")
+    user = db.get(User, record.user_id)
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset link")
+    user.hashed_password = hash_password(payload.new_password)
+    record.used = True
+    db.commit()
+    return {"detail": "Password updated. You can now log in."}
 
 
 @router.get("/me", response_model=UserOut)

@@ -1,5 +1,9 @@
 {
-  "description": "Generates tailored, detailed prompts for final-year IT projects with context-specific guidelines and a modern, user-friendly interface to streamline project planning.",
+  "title": "SkillSync",
+  "description": "An AI-assisted internship-readiness platform — resume gap analysis, a personalized learning roadmap, mock interviews, and an application tracker.",
+  "icons": {
+    "icon": "/favicon.svg"
+  },
   "robots": {
     "index": false
   },
