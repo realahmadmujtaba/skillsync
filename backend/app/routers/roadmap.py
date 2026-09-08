@@ -7,7 +7,8 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..deps import get_current_user
 from ..models import SkillAssessment, SkillStatus, User
-from ..schemas import RoadmapMilestone, RoadmapOut
+from ..resources import resources_for
+from ..schemas import ResourceLink, RoadmapMilestone, RoadmapOut
 
 router = APIRouter(prefix="/api/roadmap", tags=["roadmap"])
 
@@ -42,6 +43,11 @@ def get_roadmap(
             status = "upcoming"
             progress = 0
 
+        resources = (
+            [ResourceLink(**r) for r in resources_for(s.skill)]
+            if s.status != SkillStatus.strong
+            else []
+        )
         milestones.append(
             RoadmapMilestone(
                 skill=s.skill,
@@ -49,6 +55,7 @@ def get_roadmap(
                 focus=s.note,
                 status=status,
                 progress=progress,
+                resources=resources,
             )
         )
 

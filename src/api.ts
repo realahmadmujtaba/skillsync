@@ -65,12 +65,48 @@ export type ApiDashboard = {
   top_gaps: ApiSkill[];
 };
 
+export type ApiResourceLink = {
+  title: string;
+  url: string;
+  kind: "free" | "paid";
+};
+
 export type ApiRoadmapMilestone = {
   skill: string;
   title: string;
   focus: string;
   status: "done" | "active" | "upcoming";
   progress: number;
+  resources: ApiResourceLink[];
+};
+
+export type ApiAdminOverview = {
+  total_users: number;
+  student_count: number;
+  mentor_count: number;
+  admin_count: number;
+  total_applications: number;
+  resumes_analyzed: number;
+  weekly_signups: { week: string; users: number }[];
+};
+
+export type ApiMentee = {
+  id: string;
+  name: string;
+  email: string;
+  target_role: string;
+  readiness: number;
+  trend: string;
+  flag: string;
+};
+
+export type ApiAdminUser = {
+  id: string;
+  name: string;
+  email: string;
+  role: Role;
+  readiness: number;
+  joined: string;
 };
 
 export function getToken(): string | null {
@@ -173,6 +209,9 @@ export const api = {
   dashboard: () => request<ApiDashboard>("/api/dashboard"),
   roadmap: () =>
     request<{ milestones: ApiRoadmapMilestone[] }>("/api/roadmap"),
+  adminOverview: () => request<ApiAdminOverview>("/api/admin/overview"),
+  adminUsers: () => request<ApiAdminUser[]>("/api/admin/users"),
+  mentees: () => request<ApiMentee[]>("/api/mentor/mentees"),
 
   async analyzeResume(file: File, targetRole: string): Promise<ApiResumeAnalysis> {
     const form = new FormData();

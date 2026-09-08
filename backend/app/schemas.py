@@ -154,13 +154,57 @@ class DashboardOut(BaseModel):
     top_gaps: list[SkillOut]
 
 
+class ResourceLink(BaseModel):
+    title: str
+    url: str
+    kind: Literal["free", "paid"]
+
+
 class RoadmapMilestone(BaseModel):
     skill: str
     title: str
     focus: str
     status: Literal["done", "active", "upcoming"]
     progress: int
+    resources: list[ResourceLink]
 
 
 class RoadmapOut(BaseModel):
     milestones: list[RoadmapMilestone]
+
+
+# --- Admin / mentor ---------------------------------------------------------
+
+
+class WeeklySignups(BaseModel):
+    week: str
+    users: int
+
+
+class AdminOverviewOut(BaseModel):
+    total_users: int
+    student_count: int
+    mentor_count: int
+    admin_count: int
+    total_applications: int
+    resumes_analyzed: int
+    weekly_signups: list[WeeklySignups]
+
+
+class MenteeOut(BaseModel):
+    id: str
+    name: str
+    email: str
+    target_role: str
+    readiness: int
+    trend: str
+    flag: str
+
+
+class AdminUserOut(BaseModel):
+    id: str
+    name: str
+    email: str
+    role: Role
+    readiness: int
+    joined: str

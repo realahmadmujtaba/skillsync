@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   ResponsiveContainer,
   BarChart,
@@ -7,63 +8,71 @@ import {
   CartesianGrid,
   Tooltip,
 } from "recharts";
-import { Users, Building2, Activity, ShieldCheck, MoreHorizontal } from "lucide-react";
+import { Users, FileText, Briefcase, GraduationCap } from "lucide-react";
 import { Card, SectionLabel } from "./ui";
+import { api, type ApiAdminOverview, type ApiAdminUser } from "../api";
 
-const signups = [
-  { week: "W1", users: 210 },
-  { week: "W2", users: 340 },
-  { week: "W3", users: 480 },
-  { week: "W4", users: 620 },
-  { week: "W5", users: 710 },
-  { week: "W6", users: 905 },
-];
-
-const users = [
-  { name: "Aarav Menon", role: "Student", status: "Active", joined: "Aug 12" },
-  { name: "Northwind Labs", role: "Recruiter", status: "Verified", joined: "Aug 10" },
-  { name: "Priya Nair", role: "Student", status: "Active", joined: "Aug 09" },
-  { name: "Dr. Rao", role: "Mentor", status: "Pending", joined: "Aug 08" },
-  { name: "Helios Systems", role: "Recruiter", status: "Verified", joined: "Aug 05" },
-];
-
-const statusTone: Record<string, string> = {
-  Active: "bg-emerald-soft text-emerald",
-  Verified: "bg-[#e6eef6] text-sky",
-  Pending: "bg-[#fbf1dc] text-amber",
+const roleTone: Record<string, string> = {
+  student: "bg-emerald-soft text-emerald",
+  mentor: "bg-[#e6eef6] text-sky",
+  admin: "bg-[#fbf1dc] text-amber",
 };
 
 export default function AdminView() {
+  const [overview, setOverview] = useState<ApiAdminOverview | null>(null);
+  const [users, setUsers] = useState<ApiAdminUser[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([api.adminOverview(), api.adminUsers()])
+      .then(([o, u]) => {
+        if (cancelled) return;
+        setOverview(o);
+        setUsers(u);
+      })
+      .catch((err) => !cancelled && setError(err instanceof Error ? err.message : "Failed to load"));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (error) {
+    return <Card className="p-8 text-center text-sm text-muted">Couldn&rsquo;t load platform data: {error}</Card>;
+  }
+  if (!overview || !users) {
+    return <Card className="p-8 text-center text-sm text-muted">Loading platform data…</Card>;
+  }
+
+  const stats: [typeof Users, string, string][] = [
+    [Users, "Total users", `${overview.total_users}`],
+    [GraduationCap, "Students", `${overview.student_count}`],
+    [Briefcase, "Applications tracked", `${overview.total_applications}`],
+    [FileText, "Resumes analyzed", `${overview.resumes_analyzed}`],
+  ];
+
   return (
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-2 gap-6 lg:grid-cols-4">
-        {[
-          [Users, "Total users", "12,480", "+9%"],
-          [Building2, "Hiring partners", "840", "+3%"],
-          [Activity, "Weekly active", "6,120", "+12%"],
-          [ShieldCheck, "Uptime", "99.98%", "30d"],
-        ].map(([Icon, label, value, delta], i) => (
+        {stats.map(([Icon, label, value], i) => (
           <Card key={i} className="p-5">
             <div className="flex items-center justify-between">
-              <SectionLabel>{label as string}</SectionLabel>
+              <SectionLabel>{label}</SectionLabel>
               <Icon className="h-4 w-4 text-muted" />
             </div>
-            <div className="mt-3 font-display text-2xl font-extrabold tabular text-ink">
-              {value as string}
-            </div>
-            <div className="mt-0.5 font-mono text-xs text-emerald">{delta as string}</div>
+            <div className="mt-3 font-display text-2xl font-extrabold tabular text-ink">{value}</div>
           </Card>
         ))}
       </div>
 
       <Card className="p-6">
-        <SectionLabel>User growth</SectionLabel>
+        <SectionLabel>Signups by week</SectionLabel>
         <div className="mt-4 h-[220px] w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={signups} margin={{ left: -18, right: 8 }}>
+            <BarChart data={overview.weekly_signups} margin={{ left: -18, right: 8 }}>
               <CartesianGrid stroke="#eeece7" vertical={false} />
               <XAxis dataKey="week" tickLine={false} axisLine={false} tick={{ fill: "#6c6a72", fontSize: 12 }} />
-              <YAxis tickLine={false} axisLine={false} tick={{ fill: "#6c6a72", fontSize: 12 }} />
+              <YAxis tickLine={false} axisLine={false} tick={{ fill: "#6c6a72", fontSize: 12 }} allowDecimals={false} />
               <Tooltip
                 cursor={{ fill: "#f0eee9" }}
                 contentStyle={{ borderRadius: 12, border: "1px solid #e7e5df", fontSize: 13, fontFamily: "Inter" }}
@@ -78,7 +87,7 @@ export default function AdminView() {
         <div className="flex items-center justify-between border-b border-line px-6 py-4">
           <span className="font-display text-sm font-bold text-ink">User management</span>
           <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
-            {users.length} shown
+            {users.length} total
           </span>
         </div>
         <table className="w-full text-sm">
@@ -86,27 +95,23 @@ export default function AdminView() {
             <tr className="border-b border-line text-left font-mono text-[11px] uppercase tracking-[0.12em] text-muted">
               <th className="px-6 py-3 font-medium">Name</th>
               <th className="px-6 py-3 font-medium">Role</th>
-              <th className="px-6 py-3 font-medium">Status</th>
+              <th className="px-6 py-3 font-medium">Readiness</th>
               <th className="px-6 py-3 font-medium">Joined</th>
-              <th className="px-6 py-3" />
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
             {users.map((u) => (
-              <tr key={u.name} className="transition-colors hover:bg-paper/60">
+              <tr key={u.id} className="transition-colors hover:bg-paper/60">
                 <td className="px-6 py-3.5 font-semibold text-ink">{u.name}</td>
-                <td className="px-6 py-3.5 text-muted">{u.role}</td>
                 <td className="px-6 py-3.5">
-                  <span className={`rounded-full px-2.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-[0.1em] ${statusTone[u.status]}`}>
-                    {u.status}
+                  <span className={`rounded-full px-2.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-[0.1em] ${roleTone[u.role]}`}>
+                    {u.role}
                   </span>
                 </td>
-                <td className="px-6 py-3.5 font-mono text-xs text-muted">{u.joined}</td>
-                <td className="px-6 py-3.5 text-right">
-                  <button className="text-muted hover:text-ink" aria-label="Actions">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </button>
+                <td className="px-6 py-3.5 font-mono text-xs text-muted">
+                  {u.role === "student" ? `${u.readiness}%` : "—"}
                 </td>
+                <td className="px-6 py-3.5 font-mono text-xs text-muted">{u.joined}</td>
               </tr>
             ))}
           </tbody>

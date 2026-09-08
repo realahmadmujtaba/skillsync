@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Check, Circle, PlayCircle } from "lucide-react";
+import { Check, Circle, PlayCircle, ExternalLink } from "lucide-react";
 import { Card, SectionLabel, ProgressBar } from "./ui";
 import { api, type ApiRoadmapMilestone } from "../api";
 
@@ -96,6 +96,29 @@ export default function Roadmap() {
                     <span className="shrink-0 font-mono text-xs font-semibold tabular text-muted">
                       {m.progress}%
                     </span>
+                  </div>
+                )}
+                {m.resources.length > 0 && (
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {m.resources.map((r) => (
+                      <a
+                        key={r.url}
+                        href={r.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                          r.kind === "free"
+                            ? "border-emerald/30 bg-emerald-soft/60 text-emerald hover:bg-emerald-soft"
+                            : "border-line bg-paper/60 text-muted hover:bg-line-soft"
+                        }`}
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                        {r.title}
+                        <span className="rounded-full bg-white/60 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wide">
+                          {r.kind}
+                        </span>
+                      </a>
+                    ))}
                   </div>
                 )}
               </Card>

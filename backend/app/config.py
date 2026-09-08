@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:5173,http://localhost:8443"
     groq_api_key: str = ""
     google_client_id: str = ""
+    adzuna_app_id: str = ""
+    adzuna_app_key: str = ""
+    adzuna_country: str = "in"
 
     @property
     def cors_list(self) -> list[str]:
