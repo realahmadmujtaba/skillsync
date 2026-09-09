@@ -1,4 +1,5 @@
 import hashlib
+import logging
 import secrets
 from datetime import datetime, timedelta, timezone
 
@@ -25,6 +26,7 @@ from ..schemas import (
 from ..security import create_access_token, hash_password, verify_password
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
+logger = logging.getLogger(__name__)
 
 RESET_TOKEN_TTL_MINUTES = 30
 
@@ -92,7 +94,10 @@ def forgot_password(payload: ForgotPasswordIn, db: Session = Depends(get_db)) ->
                 ),
             )
         except Exception:
-            pass  # never leak email-delivery failures through this endpoint
+            # Never leak email-delivery failures through this endpoint's
+            # response, but do log them — otherwise a broken SMTP config
+            # fails silently forever.
+            logger.exception("Failed to send password-reset email to %s", user.email)
     # Always the same response, regardless of whether the email is registered.
     return {"detail": "If that email is registered, a reset link has been sent."}
 
