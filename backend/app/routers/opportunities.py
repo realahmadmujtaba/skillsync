@@ -18,6 +18,7 @@ from ..schemas import OpportunityOut
 router = APIRouter(prefix="/api/opportunities", tags=["opportunities"])
 
 _CACHE_TTL = 300  # seconds
+_JOOBLE_CACHE_TTL = 3600  # Jooble's free tier is a 500-request *lifetime* cap
 _cache: dict[str, tuple[float, list[dict]]] = {}
 _RESULTS_PER_COUNTRY = 10
 _MAX_RESULTS = 30
@@ -29,6 +30,7 @@ COUNTRY_NAMES = {
     "ca": "Canada",
     "au": "Australia",
     "de": "Germany",
+    "pk": "Pakistan",
     "fr": "France",
     "nl": "Netherlands",
     "sg": "Singapore",
@@ -66,16 +68,51 @@ def _fetch_adzuna(query: str, country: str) -> list[dict]:
     return results
 
 
+def _fetch_jooble_pakistan(query: str) -> list[dict]:
+    """Adzuna doesn't cover Pakistan (confirmed: UNSUPPORTED_COUNTRY), so this
+    uses a Jooble API key registered specifically on pk.jooble.org instead."""
+    if not settings.jooble_api_key:
+        return []
+
+    cache_key = f"jooble_pk:{query.lower()}"
+    now = time.time()
+    cached = _cache.get(cache_key)
+    if cached and now - cached[0] < _JOOBLE_CACHE_TTL:
+        return cached[1]
+
+    url = f"https://pk.jooble.org/api/{settings.jooble_api_key}"
+    resp = httpx.post(
+        url, json={"keywords": query, "location": "Pakistan"}, timeout=10.0
+    )
+    resp.raise_for_status()
+    jobs = resp.json().get("jobs", [])
+    normalized = [
+        {
+            "id": f"jooble-{j.get('id', '')}",
+            "title": j.get("title", ""),
+            "description": j.get("snippet", ""),
+            "company": {"display_name": j.get("company") or "Unknown company"},
+            "location": {"display_name": j.get("location", "")},
+            "created": j.get("updated", ""),
+            "_country": "pk",
+        }
+        for j in jobs
+    ]
+    _cache[cache_key] = (now, normalized)
+    return normalized
+
+
 def _fetch_all_countries(query: str) -> list[dict]:
     countries = [c.strip() for c in settings.adzuna_countries.split(",") if c.strip()]
     all_results: list[dict] = []
-    with ThreadPoolExecutor(max_workers=max(len(countries), 1)) as pool:
+    with ThreadPoolExecutor(max_workers=len(countries) + 1) as pool:
         futures = {pool.submit(_fetch_adzuna, query, c): c for c in countries}
+        futures[pool.submit(_fetch_jooble_pakistan, query)] = "pk"
         for future in as_completed(futures):
             try:
                 all_results.extend(future.result())
             except httpx.HTTPError:
-                continue  # one country's API hiccup shouldn't sink the rest
+                continue  # one source's API hiccup shouldn't sink the rest
     return all_results
 
 
@@ -158,5 +195,6 @@ def list_opportunities(
 
     if not out:
         return _fallback(db)
-    out.sort(key=lambda o: o.match, reverse=True)
+    # Pakistan listings first (as requested), each group ranked by match score.
+    out.sort(key=lambda o: ("pakistan" not in o.location.lower(), -o.match))
     return out[:_MAX_RESULTS]
