@@ -123,6 +123,10 @@ def _relative_time(iso_str: str) -> str:
         posted = datetime.fromisoformat(iso_str.replace("Z", "+00:00"))
     except ValueError:
         return "recently"
+    # Adzuna's timestamps are always UTC-aware; Jooble's are inconsistent —
+    # some carry a +00:00 offset, some are naive. Treat naive ones as UTC.
+    if posted.tzinfo is None:
+        posted = posted.replace(tzinfo=timezone.utc)
     delta = datetime.now(timezone.utc) - posted
     days = delta.days
     if days <= 0:
