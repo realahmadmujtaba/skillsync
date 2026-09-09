@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     google_client_id: str = ""
     adzuna_app_id: str = ""
     adzuna_app_key: str = ""
-    adzuna_country: str = "in"
+    adzuna_countries: str = "us,gb,in,ca,au,de"
     smtp_host: str = "smtp.gmail.com"
     smtp_port: int = 587
     smtp_user: str = ""

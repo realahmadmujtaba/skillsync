@@ -10,8 +10,23 @@ import { UploadCloud, FileText, CheckCircle2, Sparkles } from "lucide-react";
 import { Card, SectionLabel, StatusBadge, MatchPill } from "./ui";
 import { api, type ApiSkill } from "../api";
 
+const ROLE_SUGGESTIONS = [
+  "Frontend Developer",
+  "Backend Developer",
+  "Full Stack Developer",
+  "React Developer",
+  "Django Developer",
+  "Laravel Developer",
+  "Python Developer",
+  "FastAPI Developer",
+  "Machine Learning Engineer",
+  "AI Agent Developer",
+  "Automation Engineer",
+  "DevOps Engineer",
+];
+
 export default function ResumeAnalysis() {
-  const [targetRole, setTargetRole] = useState("Software Engineer Intern");
+  const [targetRole, setTargetRole] = useState("");
   const [skills, setSkills] = useState<ApiSkill[]>([]);
   const [readiness, setReadiness] = useState<number | null>(null);
   const [recommendation, setRecommendation] = useState<string | null>(null);
@@ -26,7 +41,10 @@ export default function ResumeAnalysis() {
       .dashboard()
       .then((d) => {
         if (cancelled) return;
-        setTargetRole(d.target_role);
+        // Only trust the server's target_role once they've actually run an
+        // analysis before — otherwise it's just the unset DB default, and
+        // the field should stay open for them to choose.
+        if (d.skill_coverage.length) setTargetRole(d.target_role);
         setSkills(d.skill_coverage);
         setReadiness(d.skill_coverage.length ? d.readiness : null);
       })
@@ -39,6 +57,10 @@ export default function ResumeAnalysis() {
   }, []);
 
   async function handleFile(file: File) {
+    if (!targetRole.trim()) {
+      setError("Enter or pick a target role first.");
+      return;
+    }
     if (file.type !== "application/pdf") {
       setError("Please upload a PDF resume.");
       return;
@@ -75,9 +97,25 @@ export default function ResumeAnalysis() {
               type="text"
               value={targetRole}
               onChange={(e) => setTargetRole(e.target.value)}
-              placeholder="e.g. Software Engineer Intern"
+              placeholder="Any programming role — Frontend, Backend, ML, DevOps, Django, React…"
               className="w-full rounded-lg border border-line bg-card px-3 py-2 text-sm text-ink outline-none focus:border-emerald"
             />
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {ROLE_SUGGESTIONS.map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => setTargetRole(r)}
+                  className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                    targetRole === r
+                      ? "border-emerald bg-emerald-soft text-emerald"
+                      : "border-line bg-card text-muted hover:border-ink/30"
+                  }`}
+                >
+                  {r}
+                </button>
+              ))}
+            </div>
           </div>
 
           {fileName && !busy && !error && (
@@ -87,7 +125,7 @@ export default function ResumeAnalysis() {
               </div>
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-semibold text-ink">{fileName}</div>
-                <div className="text-xs text-muted">Analyzed by Claude</div>
+                <div className="text-xs text-muted">Analyzed by AI</div>
               </div>
               <span className="inline-flex items-center gap-1 font-mono text-xs font-semibold text-emerald">
                 <CheckCircle2 className="h-4 w-4" /> Parsed
