@@ -13,6 +13,7 @@ from ..config import settings
 from ..database import get_db
 from ..deps import get_current_user
 from ..models import ReadinessSnapshot, SkillAssessment, SkillStatus, User
+from ..roadmap_taxonomy import taxonomy_for
 from ..schemas import ResumeAnalysisOut, ResumeExtraction, SkillOut
 
 router = APIRouter(prefix="/api/resume", tags=["resume"])
@@ -98,6 +99,16 @@ def analyze_resume(
 
     resume_text = _extract_pdf_text(data)
 
+    grounding = ""
+    taxonomy = taxonomy_for(target_role)
+    if taxonomy:
+        topics = ", ".join(taxonomy["topics"])
+        grounding = (
+            f"\n\nReference curriculum ({taxonomy['roadmap_label']}) — use this as "
+            f"a guide for skills typically expected in this role, alongside your "
+            f"own judgment about what's actually relevant to this resume: {topics}"
+        )
+
     client = Groq(api_key=settings.groq_api_key)
     try:
         response = client.chat.completions.create(
@@ -106,7 +117,10 @@ def analyze_resume(
                 {"role": "system", "content": ANALYSIS_SYSTEM_PROMPT},
                 {
                     "role": "user",
-                    "content": f"Target role: {target_role}\n\nResume text:\n{resume_text}",
+                    "content": (
+                        f"Target role: {target_role}\n\nResume text:\n{resume_text}"
+                        f"{grounding}"
+                    ),
                 },
             ],
             response_format=RESUME_SCHEMA,

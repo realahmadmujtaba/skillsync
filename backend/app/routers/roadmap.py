@@ -44,7 +44,7 @@ def get_roadmap(
             progress = 0
 
         resources = (
-            [ResourceLink(**r) for r in resources_for(s.skill)]
+            [ResourceLink(**r) for r in resources_for(s.skill, user.target_role)]
             if s.status != SkillStatus.strong
             else []
         )

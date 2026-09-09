@@ -11,6 +11,8 @@ from __future__ import annotations
 
 from urllib.parse import quote_plus
 
+from .roadmap_taxonomy import taxonomy_for
+
 CURATED: dict[str, list[dict[str, str]]] = {
     "react": [
         {"title": "Official React docs", "url": "https://react.dev/learn", "kind": "free"},
@@ -92,10 +94,28 @@ CURATED: dict[str, list[dict[str, str]]] = {
 }
 
 
-def resources_for(skill: str) -> list[dict[str, str]]:
-    """Curated matches for this skill, plus always-valid search links."""
+def resources_for(skill: str, target_role: str | None = None) -> list[dict[str, str]]:
+    """Curated matches for this skill, plus always-valid search links.
+
+    target_role (the user's analyzed target role, not the skill name itself)
+    is checked against the roadmap.sh taxonomy — individual skill names like
+    "Prompt Engineering" don't contain the role name as a substring, so that
+    match has to happen against the role, not the skill.
+    """
     skill_lower = skill.lower()
     matches: list[dict[str, str]] = []
+
+    if target_role:
+        taxonomy = taxonomy_for(target_role)
+        if taxonomy:
+            matches.append(
+                {
+                    "title": taxonomy["roadmap_label"],
+                    "url": taxonomy["roadmap_url"],
+                    "kind": "free",
+                }
+            )
+
     for keyword, links in CURATED.items():
         if keyword in skill_lower:
             matches.extend(links)
