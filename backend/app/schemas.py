@@ -142,6 +142,45 @@ class ResumeAnalysisOut(BaseModel):
     skills: list[SkillOut]
 
 
+class TargetRoleIn(BaseModel):
+    target_role: str
+
+
+# --- Resume builder ----------------------------------------------------
+
+
+class ResumeEducation(BaseModel):
+    school: str = ""
+    degree: str = ""
+    start: str = ""
+    end: str = ""
+
+
+class ResumeExperience(BaseModel):
+    company: str = ""
+    role: str = ""
+    start: str = ""
+    end: str = ""
+    bullets: list[str] = []
+
+
+class ResumeProject(BaseModel):
+    name: str = ""
+    tech: str = ""
+    bullets: list[str] = []
+
+
+class ResumeDraft(BaseModel):
+    name: str = ""
+    email: str = ""
+    phone: str = ""
+    summary: str = ""
+    education: list[ResumeEducation] = []
+    experience: list[ResumeExperience] = []
+    projects: list[ResumeProject] = []
+    skills: list[str] = []
+
+
 class ReadinessPoint(BaseModel):
     date: str
     score: int

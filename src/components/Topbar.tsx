@@ -5,6 +5,7 @@ import type { ViewKey } from "./Sidebar";
 const titles: Partial<Record<ViewKey, { title: string; sub: string }>> = {
   dashboard: { title: "Dashboard", sub: "Your internship readiness at a glance" },
   resume: { title: "Resume Analysis", sub: "AI gap analysis against your target role" },
+  "resume-builder": { title: "Resume Builder", sub: "Turn your experience into a polished resume" },
   roadmap: { title: "Learning Roadmap", sub: "A personalized plan to close your gaps" },
   interview: { title: "Mock Interview", sub: "Practice with AI-generated feedback" },
   opportunities: { title: "Opportunities", sub: "Internships matched to your profile" },

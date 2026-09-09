@@ -44,6 +44,7 @@ class User(Base):
     role: Mapped[Role] = mapped_column(Enum(Role), default=Role.student, nullable=False)
     readiness: Mapped[int] = mapped_column(Integer, default=0)
     target_role: Mapped[str] = mapped_column(String(160), default="Software Engineer Intern")
+    resume_draft: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(default=func.now())
 
     applications: Mapped[list[Application]] = relationship(

@@ -14,7 +14,7 @@ from ..database import get_db
 from ..deps import get_current_user
 from ..models import ReadinessSnapshot, SkillAssessment, SkillStatus, User
 from ..roadmap_taxonomy import taxonomy_for
-from ..schemas import ResumeAnalysisOut, ResumeExtraction, SkillOut
+from ..schemas import ResumeAnalysisOut, ResumeExtraction, SkillOut, TargetRoleIn
 
 router = APIRouter(prefix="/api/resume", tags=["resume"])
 
@@ -77,6 +77,19 @@ def _extract_pdf_text(data: bytes) -> str:
             status_code=422, detail="No extractable text found in this PDF"
         )
     return text
+
+
+@router.post("/target-role")
+def set_target_role(
+    payload: TargetRoleIn,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Lets a student without a resume yet pick a target role and get a
+    starter roadmap immediately — no file, no AI call, instant."""
+    user.target_role = payload.target_role
+    db.commit()
+    return {"target_role": user.target_role}
 
 
 @router.post("/analyze", response_model=ResumeAnalysisOut)

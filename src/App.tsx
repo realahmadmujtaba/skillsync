@@ -7,6 +7,7 @@ import Login from "./components/Login";
 import ResetPassword from "./components/ResetPassword";
 import Dashboard from "./components/Dashboard";
 import ResumeAnalysis from "./components/ResumeAnalysis";
+import ResumeBuilder from "./components/ResumeBuilder";
 import Roadmap from "./components/Roadmap";
 import Opportunities from "./components/Opportunities";
 import Applications from "./components/Applications";
@@ -46,7 +47,9 @@ function AppShell() {
     }
     switch (view) {
       case "resume":
-        return <ResumeAnalysis />;
+        return <ResumeAnalysis onNavigate={setView} />;
+      case "resume-builder":
+        return <ResumeBuilder />;
       case "roadmap":
         return <Roadmap />;
       case "interview":

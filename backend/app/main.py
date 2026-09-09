@@ -12,6 +12,7 @@ from .routers import (
     mentor,
     opportunities,
     resume,
+    resume_builder,
     roadmap,
 )
 
@@ -32,6 +33,7 @@ app.include_router(opportunities.router)
 app.include_router(applications.router)
 app.include_router(interviews.router)
 app.include_router(resume.router)
+app.include_router(resume_builder.router)
 app.include_router(dashboard.router)
 app.include_router(roadmap.router)
 app.include_router(admin.router)

@@ -11,6 +11,7 @@ import {
   Users,
   ShieldCheck,
   BarChart3,
+  FilePlus2,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useAuth, roleLabel, type Role } from "../auth";
@@ -18,6 +19,7 @@ import { useAuth, roleLabel, type Role } from "../auth";
 export type ViewKey =
   | "dashboard"
   | "resume"
+  | "resume-builder"
   | "roadmap"
   | "opportunities"
   | "applications"
@@ -27,6 +29,7 @@ const navByRole: Record<Role, { key: ViewKey; label: string; icon: LucideIcon }[
   student: [
     { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
     { key: "resume", label: "Resume Analysis", icon: FileSearch },
+    { key: "resume-builder", label: "Resume Builder", icon: FilePlus2 },
     { key: "roadmap", label: "Learning Roadmap", icon: Route },
     { key: "interview", label: "Mock Interview", icon: MessagesSquare },
     { key: "opportunities", label: "Opportunities", icon: Briefcase },

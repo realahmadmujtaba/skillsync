@@ -54,6 +54,38 @@ export type ApiResumeAnalysis = {
   skills: ApiSkill[];
 };
 
+export type ApiResumeEducation = {
+  school: string;
+  degree: string;
+  start: string;
+  end: string;
+};
+
+export type ApiResumeExperience = {
+  company: string;
+  role: string;
+  start: string;
+  end: string;
+  bullets: string[];
+};
+
+export type ApiResumeProject = {
+  name: string;
+  tech: string;
+  bullets: string[];
+};
+
+export type ApiResumeDraft = {
+  name: string;
+  email: string;
+  phone: string;
+  summary: string;
+  education: ApiResumeEducation[];
+  experience: ApiResumeExperience[];
+  projects: ApiResumeProject[];
+  skills: string[];
+};
+
 export type ApiDashboard = {
   name: string;
   target_role: string;
@@ -249,5 +281,30 @@ export const api = {
     );
     setToken(data.access_token);
     return data.user;
+  },
+
+  async setTargetRole(targetRole: string): Promise<void> {
+    await request<{ target_role: string }>("/api/resume/target-role", {
+      method: "POST",
+      body: JSON.stringify({ target_role: targetRole }),
+    });
+  },
+
+  async getResumeDraft(): Promise<ApiResumeDraft> {
+    return request<ApiResumeDraft>("/api/resume/draft");
+  },
+
+  async saveResumeDraft(draft: ApiResumeDraft): Promise<ApiResumeDraft> {
+    return request<ApiResumeDraft>("/api/resume/draft", {
+      method: "PUT",
+      body: JSON.stringify(draft),
+    });
+  },
+
+  async polishResumeDraft(draft: ApiResumeDraft): Promise<ApiResumeDraft> {
+    return request<ApiResumeDraft>("/api/resume/draft/polish", {
+      method: "POST",
+      body: JSON.stringify(draft),
+    });
   },
 };

@@ -6,9 +6,10 @@ import {
   PolarAngleAxis,
   Radar,
 } from "recharts";
-import { UploadCloud, FileText, CheckCircle2, Sparkles } from "lucide-react";
+import { UploadCloud, FileText, CheckCircle2, Sparkles, Route } from "lucide-react";
 import { Card, SectionLabel, StatusBadge, MatchPill } from "./ui";
 import { api, type ApiSkill } from "../api";
+import type { ViewKey } from "./Sidebar";
 
 const ROLE_SUGGESTIONS = [
   "Frontend Developer",
@@ -25,7 +26,11 @@ const ROLE_SUGGESTIONS = [
   "DevOps Engineer",
 ];
 
-export default function ResumeAnalysis() {
+export default function ResumeAnalysis({
+  onNavigate,
+}: {
+  onNavigate?: (view: ViewKey) => void;
+}) {
   const [targetRole, setTargetRole] = useState("");
   const [skills, setSkills] = useState<ApiSkill[]>([]);
   const [readiness, setReadiness] = useState<number | null>(null);
@@ -33,6 +38,7 @@ export default function ResumeAnalysis() {
   const [fileName, setFileName] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [settingRole, setSettingRole] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -77,6 +83,23 @@ export default function ResumeAnalysis() {
       setError(err instanceof Error ? err.message : "Analysis failed");
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function handleNoResume() {
+    if (!targetRole.trim()) {
+      setError("Enter or pick a target role first.");
+      return;
+    }
+    setError(null);
+    setSettingRole(true);
+    try {
+      await api.setTargetRole(targetRole);
+      onNavigate?.("roadmap");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not set target role");
+    } finally {
+      setSettingRole(false);
     }
   }
 
@@ -156,6 +179,24 @@ export default function ResumeAnalysis() {
               }}
             />
           </label>
+
+          <div className="mt-4 flex items-center gap-3 rounded-xl border border-dashed border-line bg-paper/40 px-4 py-3">
+            <Route className="h-5 w-5 shrink-0 text-emerald" />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-ink">Don't have a resume yet?</p>
+              <p className="text-xs text-muted">
+                Pick your target role above and jump straight into a learning roadmap.
+              </p>
+            </div>
+            <button
+              type="button"
+              disabled={settingRole}
+              onClick={handleNoResume}
+              className="shrink-0 rounded-lg bg-ink px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-ink/90 disabled:opacity-60"
+            >
+              {settingRole ? "Setting up…" : "Start roadmap"}
+            </button>
+          </div>
         </Card>
 
         {/* Match summary */}
