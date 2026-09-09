@@ -22,6 +22,7 @@ _JOOBLE_CACHE_TTL = 3600  # Jooble's free tier is a 500-request *lifetime* cap
 _cache: dict[str, tuple[float, list[dict]]] = {}
 _RESULTS_PER_COUNTRY = 10
 _MAX_RESULTS = 30
+_PAKISTAN_MAX = 10  # leads the list, but leaves room for the other countries
 
 COUNTRY_NAMES = {
     "us": "United States",
@@ -199,6 +200,14 @@ def list_opportunities(
 
     if not out:
         return _fallback(db)
-    # Pakistan listings first (as requested), each group ranked by match score.
-    out.sort(key=lambda o: ("pakistan" not in o.location.lower(), -o.match))
-    return out[:_MAX_RESULTS]
+    # Pakistan leads the list (as requested), but capped so it doesn't crowd
+    # out every other country — Jooble alone can return enough results to
+    # fill the entire page.
+    pakistan = sorted(
+        (o for o in out if "pakistan" in o.location.lower()), key=lambda o: -o.match
+    )
+    others = sorted(
+        (o for o in out if "pakistan" not in o.location.lower()), key=lambda o: -o.match
+    )
+    combined = pakistan[:_PAKISTAN_MAX] + others
+    return combined[:_MAX_RESULTS]
