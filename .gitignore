@@ -1,3 +1,6 @@
+# Private reference material — never commit real people's documents
+linkedn_profiles/
+
 node_modules/
 dist/
 build/

@@ -12,9 +12,16 @@ from sqlalchemy.orm import Session
 from ..config import settings
 from ..database import get_db
 from ..deps import get_current_user
+from ..example_resumes import EXAMPLE_RESUMES
 from ..models import ReadinessSnapshot, SkillAssessment, SkillStatus, User
 from ..roadmap_taxonomy import taxonomy_for
-from ..schemas import ResumeAnalysisOut, ResumeExtraction, SkillOut, TargetRoleIn
+from ..schemas import (
+    ResumeAnalysisOut,
+    ResumeExample,
+    ResumeExtraction,
+    SkillOut,
+    TargetRoleIn,
+)
 
 router = APIRouter(prefix="/api/resume", tags=["resume"])
 
@@ -90,6 +97,13 @@ def set_target_role(
     user.target_role = payload.target_role
     db.commit()
     return {"target_role": user.target_role}
+
+
+@router.get("/examples", response_model=list[ResumeExample])
+def get_example_resumes(user: User = Depends(get_current_user)) -> list[dict]:
+    """Illustrative, fully fictional example resumes per target role, for
+    students who don't have a resume yet."""
+    return EXAMPLE_RESUMES
 
 
 @router.post("/analyze", response_model=ResumeAnalysisOut)

@@ -86,6 +86,12 @@ export type ApiResumeDraft = {
   skills: string[];
 };
 
+export type ApiResumeExample = {
+  target_role: string;
+  roadmap_label: string;
+  resume: ApiResumeDraft;
+};
+
 export type ApiDashboard = {
   name: string;
   target_role: string;
@@ -306,5 +312,9 @@ export const api = {
       method: "POST",
       body: JSON.stringify(draft),
     });
+  },
+
+  async getExampleResumes(): Promise<ApiResumeExample[]> {
+    return request<ApiResumeExample[]>("/api/resume/examples");
   },
 };

@@ -181,6 +181,14 @@ class ResumeDraft(BaseModel):
     skills: list[str] = []
 
 
+class ResumeExample(BaseModel):
+    """A fully fictional, illustrative example resume for a target role."""
+
+    target_role: str
+    roadmap_label: str
+    resume: ResumeDraft
+
+
 class ReadinessPoint(BaseModel):
     date: str
     score: int

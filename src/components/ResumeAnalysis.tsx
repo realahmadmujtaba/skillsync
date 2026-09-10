@@ -6,9 +6,19 @@ import {
   PolarAngleAxis,
   Radar,
 } from "recharts";
-import { UploadCloud, FileText, CheckCircle2, Sparkles, Route } from "lucide-react";
+import {
+  UploadCloud,
+  FileText,
+  CheckCircle2,
+  Sparkles,
+  Route,
+  Eye,
+  X,
+  Loader2,
+} from "lucide-react";
 import { Card, SectionLabel, StatusBadge, MatchPill } from "./ui";
-import { api, type ApiSkill } from "../api";
+import { ResumeReview } from "./ResumeReview";
+import { api, type ApiSkill, type ApiResumeExample } from "../api";
 import type { ViewKey } from "./Sidebar";
 
 const ROLE_SUGGESTIONS = [
@@ -39,6 +49,11 @@ export default function ResumeAnalysis({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [settingRole, setSettingRole] = useState(false);
+  const [examples, setExamples] = useState<ApiResumeExample[] | null>(null);
+  const [examplesLoading, setExamplesLoading] = useState(false);
+  const [examplesError, setExamplesError] = useState<string | null>(null);
+  const [showExamples, setShowExamples] = useState(false);
+  const [selectedExample, setSelectedExample] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -101,6 +116,31 @@ export default function ResumeAnalysis({
     } finally {
       setSettingRole(false);
     }
+  }
+
+  function openExamples() {
+    setShowExamples(true);
+    if (examples || examplesLoading) return;
+    setExamplesLoading(true);
+    setExamplesError(null);
+    api
+      .getExampleResumes()
+      .then((res) => {
+        setExamples(res);
+        const roleLower = targetRole.trim().toLowerCase();
+        const idx = roleLower
+          ? res.findIndex(
+              (e) =>
+                e.target_role.toLowerCase().includes(roleLower) ||
+                roleLower.includes(e.target_role.toLowerCase()),
+            )
+          : -1;
+        if (idx >= 0) setSelectedExample(idx);
+      })
+      .catch((err) => {
+        setExamplesError(err instanceof Error ? err.message : "Could not load examples");
+      })
+      .finally(() => setExamplesLoading(false));
   }
 
   const overallMatch = readiness ?? 0;
@@ -180,22 +220,34 @@ export default function ResumeAnalysis({
             />
           </label>
 
-          <div className="mt-4 flex items-center gap-3 rounded-xl border border-dashed border-line bg-paper/40 px-4 py-3">
-            <Route className="h-5 w-5 shrink-0 text-emerald" />
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-ink">Don't have a resume yet?</p>
-              <p className="text-xs text-muted">
-                Pick your target role above and jump straight into a learning roadmap.
-              </p>
+          <div className="mt-4 flex flex-col gap-3 rounded-xl border border-dashed border-line bg-paper/40 px-4 py-3">
+            <div className="flex items-center gap-3">
+              <Route className="h-5 w-5 shrink-0 text-emerald" />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-ink">Don't have a resume yet?</p>
+                <p className="text-xs text-muted">
+                  Pick your target role above, then start learning or see what a strong
+                  resume looks like.
+                </p>
+              </div>
             </div>
-            <button
-              type="button"
-              disabled={settingRole}
-              onClick={handleNoResume}
-              className="shrink-0 rounded-lg bg-ink px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-ink/90 disabled:opacity-60"
-            >
-              {settingRole ? "Setting up…" : "Start roadmap"}
-            </button>
+            <div className="flex flex-wrap gap-2 pl-8">
+              <button
+                type="button"
+                disabled={settingRole}
+                onClick={handleNoResume}
+                className="rounded-lg bg-ink px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-ink/90 disabled:opacity-60"
+              >
+                {settingRole ? "Setting up…" : "Start roadmap"}
+              </button>
+              <button
+                type="button"
+                onClick={openExamples}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-card px-3 py-2 text-xs font-semibold text-ink transition-colors hover:border-emerald hover:text-emerald"
+              >
+                <Eye className="h-3.5 w-3.5" /> See an example resume
+              </button>
+            </div>
           </div>
         </Card>
 
@@ -273,6 +325,68 @@ export default function ResumeAnalysis({
             <span className="font-semibold">AI recommendation:</span> {recommendation}
           </p>
         </Card>
+      )}
+
+      {showExamples && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => setShowExamples(false)}
+        >
+          <div
+            className="flex max-h-[85vh] w-full max-w-2xl flex-col rounded-2xl bg-card shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-line px-6 py-4">
+              <SectionLabel>Example resumes</SectionLabel>
+              <button
+                type="button"
+                onClick={() => setShowExamples(false)}
+                className="rounded-lg p-1.5 text-muted transition-colors hover:bg-paper hover:text-ink"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto px-6 py-5">
+              {examplesLoading && (
+                <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted">
+                  <Loader2 className="h-4 w-4 animate-spin" /> Loading examples…
+                </div>
+              )}
+              {examplesError && (
+                <p className="rounded-lg bg-[#fae6ea] px-3 py-2 text-sm text-rose">
+                  {examplesError}
+                </p>
+              )}
+              {examples && examples.length > 0 && (
+                <>
+                  <div className="mb-4 flex flex-wrap gap-1.5">
+                    {examples.map((ex, i) => (
+                      <button
+                        key={ex.target_role}
+                        type="button"
+                        onClick={() => setSelectedExample(i)}
+                        className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                          selectedExample === i
+                            ? "border-emerald bg-emerald-soft text-emerald"
+                            : "border-line bg-paper text-muted hover:border-ink/30"
+                        }`}
+                      >
+                        {ex.target_role}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="mb-4 rounded-lg bg-amber/10 px-3 py-2 text-xs font-medium text-amber">
+                    AI-generated example — not a real person's resume.
+                  </div>
+
+                  <ResumeReview draft={examples[selectedExample].resume} />
+                </>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
